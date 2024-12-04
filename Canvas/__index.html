@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Floorplan tool</title>
+</head>
+<style>
+    body {
+        margin: 0;
+        padding: 0;
+        font-family: 'Lucida Grande', Arial, sans-serif;
+    }
+
+    h2 {
+        border-top-right-radius: 24px;
+        padding: 12px;
+    }
+
+    .flex {
+        display: flex;
+    }
+
+    .row {
+        flex-direction: row;
+    }
+
+    .column {
+        flex-direction: column;
+    }
+
+    .flex-center {
+        justify-content: center
+    }
+
+    .tab-button {
+        width: 10rem;
+        display: inline-block;
+        background-color: #eeeeee;
+        font-weight: bold;
+        margin-right: 5px;
+        border: 1px solid gainsboro;
+        color: gray;
+        padding: .5rem 1rem;
+        box-shadow: 0 .5rem 1rem 0 rgba(0, 0, 0, .05);
+        border-radius: .5rem;
+        cursor: pointer;
+    }
+
+    .layout-button {
+        background-color: #eeeeee;
+        font-weight: bold;
+        margin-right: 5px;
+        border: 1px solid gainsboro;
+        color: gray;
+        padding: .5rem 1rem;
+        box-shadow: 0 .5rem 1rem 0 rgba(0, 0, 0, .05);
+        border-radius: .5rem;
+        cursor: pointer;
+    }
+
+    .layout-container {
+        justify-content: center;
+        margin: 2rem auto;
+    }
+
+    .tab-button:hover {
+        border: 1px solid black;
+    }
+
+    .active {
+        background-color: #ffffff;
+        border-bottom: 2px solid #333333;
+    }
+
+    .hidden {
+        display: none !important;
+    }
+
+    .panel {
+        padding: 1rem;
+        background-color: #eeeeee;
+        border: 1px solid #cccccc;
+    }
+
+    .clickable:hover {
+        cursor: pointer;
+        transform: scale(1.1);
+    }
+
+    .controls {
+        opacity: 0;
+        transition: opacity 0.5s ease-out;
+        transition-delay: 0.5s;
+    }
+
+    .draggable:hover + .controls {
+        opacity: 1;
+        transition-delay: 0s;
+    }
+
+    .controls:hover, .controls:hover ~ .controls {
+        opacity: 1;
+        transition-delay: 0s;
+    }
+
+    .control-button {
+        background-color: #eeeeee;
+        font-weight: bold;
+        border: 1px solid gainsboro;
+        color: gray;
+        padding: .5rem 1rem;
+        box-shadow: 0 .5rem 1rem 0 rgba(0, 0, 0, .1);
+        border-radius: 100%;
+        cursor: pointer;
+    }
+
+    .tab-button img {
+        max-width: 6rem;
+    }
+
+    .floorplan {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+
+    .loading-spinner {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background-color: #f0f4f8;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+    }
+
+    .loading-spinner h2 {
+        color: #000000;
+        margin-bottom: 1rem;
+    }
+
+    @keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+    .spinner {
+        border: 4px solid rgba(0, 0, 0, 0.1);
+        width: 3rem;
+        height: 3rem;
+        border-radius: 50%;
+        border-top-color: #eeeeee;
+        animation: spin 1s linear infinite;
+    }
+
+    #canvasContainer {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+    }
+
+    canvas {
+        border: 1px solid black;
+        position: absolute;
+    }
+
+    #popup {
+        position: absolute;
+        background-color: white;
+        border: 1px solid black;
+        padding: 5px;
+        display: none;
+    }
+
+</style>
+<script>
+    window.onload = () => {
+        let currentFloor = 1;
+        let currentCategory = "tables";
+        let buildingLoaded = false;
+        let furnitureLoaded = false;
+
+        const [_, houseId] = window.location.hash.split("#");
+        const createFloorButton = (floorNumber, floorName) => {
+            const button = document.createElement('button');
+            button.id = `floor-button-${floorNumber}`;
+            button.innerText = floorNumber;
+            button.onclick = () => showFloor(floorNumber);
+            button.classList.add('tab-button');
+            button.classList.add('clickable');
+            button.innerText = floorName
+            floorNumber === currentFloor && button.classList.add('active');
+            return button;
+        }
+        const createCategoryButton = (categoryName) => {
+            const button = document.createElement('button');
+            button.id = `${categoryName}-tab`;
+            button.innerText = categoryName;
+            button.onclick = () => showCategory(categoryName);
+            button.classList.add('layout-button');
+            button.classList.add('clickable');
+            categoryName === currentCategory && button.classList.add('active');
+            return button;
+        }
+        const checkIfLoaded = () => {
+            if (buildingLoaded && furnitureLoaded) {
+                document.getElementById("loading-spinner").classList.add("hidden");
+            }
+        }
+        //  Load floors based on building id
+        // fetch("/building.json").then(resp => resp.json()).then(building => {
+        //   const {floors} = building.houses.find(h => h.id === houseId) ?? building.houses[0];
+        //   floors.forEach((floor, index) => {
+        //     //  Add floor buttons
+        //     const floorNo = index+1;
+        //     const floorButton = createFloorButton(floorNo, floor.name);
+        //     document.getElementById('floor-buttons').appendChild(floorButton);
+        //     const parentDiv = document.createElement('div');
+        //
+        //
+        //     //  Add floor images
+        //     const div = document.createElement('div');
+        //     div.id = `floor-${floorNo}`;
+        //     index+1 !== currentFloor && div.classList.add('hidden');
+        //
+        //     const floorImage = document.createElement('img');
+        //     floorImage.src = `${building.base_url}/${floor.image}`;
+        //     floorImage.draggable = false;
+        //     div.appendChild(floorImage);
+        //     parentDiv.appendChild(div)
+        //     parentDiv.classList.add('floorplan');
+        //     document.getElementById('floor-plans').appendChild(parentDiv);
+        //
+        //   });
+        // }).then(() => {
+        //   buildingLoaded = true;
+        //   checkIfLoaded()
+        // })
+        //
+        // // Load furniture
+        // fetch("/furniture.json").then(resp => resp.json()).then(furniture => {
+        //   furniture.forEach(f => {
+        //     const categoryName = f.name.toLowerCase();
+        //     const categoryButton = createCategoryButton(categoryName);
+        //     document.getElementById('category-buttons').appendChild(categoryButton);
+        //     const {items} = f;
+        //     const div = document.createElement('div');
+        //     div.classList.add('layout-container');
+        //     div.classList.add('column');
+        //     div.classList.add('flex');
+        //     currentCategory !== categoryName && div.classList.add('hidden');
+        //     div.id = `${categoryName}-container`;
+        //
+        //     items.forEach(item => {
+        //       const button = document.createElement('button');
+        //       button.classList.add('tab-button');
+        //       button.onclick = () => addFurniture(item.name);
+        //       const img = document.createElement('img');
+        //       img.src = item.image;
+        //       img.draggable = false;
+        //       button.appendChild(img);
+        //       div.appendChild(button);
+        //     });
+        //
+        //     document.getElementById('furniture-containers').appendChild(div)
+        //   });
+        // }).then(() => {
+        //   furnitureLoaded = true;
+        //   checkIfLoaded();
+        // });
+        function showFloor(floorNumber) {
+            if (floorNumber === currentFloor) {
+                return;
+            }
+
+            document.getElementById(`floor-${currentFloor}`).classList.add('hidden');
+            document.getElementById(`floor-button-${currentFloor}`).classList.remove('active');
+            currentFloor = floorNumber;
+            document.getElementById(`floor-${currentFloor}`).classList.remove('hidden');
+            document.getElementById(`floor-button-${currentFloor}`).classList.add('active');
+        }
+
+        function addFurniture(furniture) {
+            let angle = 0
+            const img = document.querySelector(`img[src="${furniture}.png"]`).cloneNode(true);
+            img.style.position = 'absolute';
+            img.style.top = '0px';
+            img.style.left = '0px';
+            img.style.cursor = 'move';
+            img.classList.add('draggable');
+
+            const controls = document.querySelector('#control-template').cloneNode(true);
+            controls.classList.remove('hidden');
+            controls.style.position = 'absolute';
+            controls.style.top = '-100px';
+            controls.style.left = '-100px';
+            controls.id = "";
+            controls.childNodes[1].onclick = () => {
+                img.className = img.className.replace(/\brotate-\S+/g, '');
+                angle = (angle + 10) % 360;
+                img.classList.add(`rotate-${angle < 0 ? `neg-${-1 * angle}` : angle}`);
+            };
+            controls.childNodes[3].onclick = () => {
+                img.remove();
+                controls.remove();
+            };
+            controls.childNodes[5].onclick = () => {
+                img.className = img.className.replace(/\brotate-\S+/g, '');
+                angle = (angle - 10) % 360;
+                img.classList.add(`rotate-${angle < 0 ? `neg-${-1 * angle}` : angle}`);
+            };
+
+            img.addEventListener('mousedown', (e) => {
+                const x = e.clientX - img.getBoundingClientRect().left;
+                const y = e.clientY - img.getBoundingClientRect().top;
+                const move = (e) => {
+                    img.style.top = `${y}px`;
+                    img.style.left = `${x}px`;
+                    controls.style.top = `${(e.clientY - y) - controls.offsetHeight / 2 - img.offsetHeight / 2}px`;
+                    controls.style.left = `${(e.clientX - x) - (controls.offsetWidth - img.offsetWidth) / 2}px`;
+                };
+                document.addEventListener('mousemove', move);
+                document.addEventListener('mouseup', () => {
+                    document.removeEventListener('mousemove', move);
+                });
+            });
+
+            document.getElementById(`floor-${currentFloor}`).appendChild(img);
+            document.getElementById(`floor-${currentFloor}`).appendChild(controls);
+        }
+
+        function showCategory(categoryName) {
+            if (categoryName === currentCategory) {
+                return;
+            }
+
+            document.getElementById(`${currentCategory}-container`).classList.add('hidden');
+            document.getElementById(`${currentCategory}-tab`).classList.remove('active');
+
+            currentCategory = categoryName;
+
+            document.getElementById(`${currentCategory}-tab`).classList.add('active');
+            document.getElementById(`${currentCategory}-container`).classList.remove('hidden');
+
+        }
+
+        const canvas = document.getElementById('imageCanvas');
+        const ctx = canvas.getContext('2d');
+        const img = new Image();
+        img.src = '/assets/floorplans/example-floor-1.jpg';
+        const popup = document.getElementById('popup');
+        const popupButton = document.getElementById('popupButton');
+        const increaseButton = document.getElementById('increaseButton');
+
+        const resizeCanvas = () => {
+            const container = document.getElementById('canvasContainer');
+            const containerWidth = container.clientWidth;
+            const containerHeight = container.clientHeight;
+
+            // Update canvas size
+            canvas.width = containerWidth;
+            canvas.height = containerHeight;
+
+            // Scale main image
+            const widthScale = containerWidth / img.width;
+            const heightScale = containerHeight / img.height;
+            scale = Math.max(widthScale, heightScale);
+
+            // Update canvas position
+            posX = (containerWidth - img.width * scale) / 2;
+            posY = (containerHeight - img.height * scale) / 2;
+
+            drawImage();
+        };
+        img.onload = () => {
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+        };
+
+        let overlayClickOffsetX = 0;
+        let overlayClickOffsetY = 0;
+        let posX = 0;
+        let posY = 0;
+        let scale = 1;
+        let dragging = false;
+        let draggingOverlay = false;
+        let lastMouseX = 0;
+        let lastMouseY = 0;
+        let isOverlayVisible = true;
+        let overlayPosX = 0;
+        let overlayPosY = 0;
+        let isMouseOverPopup = false;
+        let overlayImgRotation = 0;
+
+        const minScale = 0.1;
+        const maxScale = 3;
+
+
+        const overlayImg = new Image();
+        overlayImg.src = '/assets/furniture/beds/bed-single.png';
+        overlayImg.onload = () => {
+            drawImage();
+        };
+
+        const drawImage = () => {
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw main image
+            ctx.drawImage(img, posX, posY, img.width * scale, img.height * scale);
+
+            if (isOverlayVisible) {
+                // Draw overlay image with rotation
+                ctx.save();
+                ctx.translate(
+                    posX + overlayPosX * scale + overlayImg.width / 2 * scale,
+                    posY + overlayPosY * scale + overlayImg.height / 2 * scale
+                );
+                ctx.rotate(overlayImgRotation * Math.PI / 180);
+                ctx.translate(
+                    -overlayImg.width / 2 * scale,
+                    -overlayImg.height / 2 * scale
+                );
+                ctx.drawImage(overlayImg, 0, 0, overlayImg.width * scale, overlayImg.height * scale);
+                ctx.restore();
+            }
+        };
+
+        increaseButton.addEventListener('click', () => {
+            overlayImgRotation += 45;
+            if (overlayImgRotation >= 360) {
+                overlayImgRotation = 0;
+            }
+            drawImage();
+        });
+        const limitPan = () => {
+            const scaledWidth = img.width * scale;
+            const scaledHeight = img.height * scale;
+
+            if (scaledWidth < canvas.width) {
+                posX = (canvas.width - scaledWidth) / 2;
+            } else {
+                posX = Math.min(posX, 0);
+                posX = Math.max(posX, canvas.width - scaledWidth);
+            }
+
+            if (scaledHeight < canvas.height) {
+                posY = (canvas.height - scaledHeight) / 2;
+            } else {
+                posY = Math.min(posY, 0);
+                posY = Math.max(posY, canvas.height - scaledHeight);
+            }
+        };
+
+        const isMouseOverOverlay = (clientX, clientY) => {
+            const canvasRect = canvas.getBoundingClientRect();
+            const x = (clientX - canvasRect.left - posX) / scale;
+            const y = (clientY - canvasRect.top - posY) / scale;
+
+            const centerX = overlayPosX + overlayImg.width / 2;
+            const centerY = overlayPosY + overlayImg.height / 2;
+
+            const angleRad = -overlayImgRotation * (Math.PI / 180);
+            const cosAngle = Math.cos(angleRad);
+            const sinAngle = Math.sin(angleRad);
+
+            const rotatedX = centerX + (x - centerX) * cosAngle - (y - centerY) * sinAngle;
+            const rotatedY = centerY + (x - centerX) * sinAngle + (y - centerY) * cosAngle;
+
+            return (
+                rotatedX >= overlayPosX &&
+                rotatedX <= overlayPosX + overlayImg.width &&
+                rotatedY >= overlayPosY &&
+                rotatedY <= overlayPosY + overlayImg.height
+            );
+        };
+
+        const updatePopupPosition = () => {
+            const canvasRect = canvas.getBoundingClientRect();
+            const x = posX + overlayPosX * scale;
+            const y = posY + (overlayPosY - popup.clientHeight / canvasRect.height - 0.1) * scale;
+            popup.style.transform = `translate(${x}px, ${y}px)`;
+        };
+
+
+        const checkPopupVisibility = () => {
+            if (isMouseOverOverlay(lastMouseX, lastMouseY) || isMouseOverPopup) {
+                updatePopupPosition();
+                popup.style.display = 'block';
+            } else {
+                popup.style.display = 'none';
+            }
+        };
+
+        canvas.addEventListener('mousedown', (e) => {
+            lastMouseX = e.clientX;
+            lastMouseY = e.clientY;
+
+            if (isMouseOverOverlay(lastMouseX, lastMouseY)) {
+                draggingOverlay = true;
+                overlayClickOffsetX = (lastMouseX - posX) / scale - overlayPosX;
+                overlayClickOffsetY = (lastMouseY - posY) / scale - overlayPosY;
+            } else {
+                dragging = true;
+            }
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (dragging) {
+                const dx = e.clientX - lastMouseX;
+                const dy = e.clientY - lastMouseY;
+                posX += dx;
+                posY += dy;
+                lastMouseX = e.clientX;
+                lastMouseY = e.clientY;
+                limitPan();
+                drawImage();
+            } else if (draggingOverlay) {
+                const x = (e.clientX - posX) / scale;
+                const y = (e.clientY - posY) / scale;
+
+                overlayPosX = x - overlayClickOffsetX;
+                overlayPosY = y - overlayClickOffsetY;
+
+                // Ensure overlay stays within the main image boundaries
+                overlayPosX = Math.min(Math.max(0, overlayPosX), img.width - overlayImg.width);
+                overlayPosY = Math.min(Math.max(0, overlayPosY), img.height - overlayImg.height);
+
+                drawImage();
+            }
+
+            lastMouseX = e.clientX;
+            lastMouseY = e.clientY;
+
+            checkPopupVisibility();
+        });
+
+        popup.addEventListener('mouseenter', () => {
+            isMouseOverPopup = true;
+            checkPopupVisibility();
+        });
+
+        popup.addEventListener('mouseleave', () => {
+            isMouseOverPopup = false;
+            checkPopupVisibility();
+        });
+
+        popupButton.addEventListener('click', () => {
+            isOverlayVisible = !isOverlayVisible;
+            drawImage()
+        });
+
+
+        canvas.addEventListener('mouseup', () => {
+            dragging = false;
+            draggingOverlay = false;
+        });
+
+        canvas.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const zoomFactor = 0.1;
+            const mouseX = e.clientX - canvas.getBoundingClientRect().left;
+            const mouseY = e.clientY - canvas.getBoundingClientRect().top;
+            const prevScale = scale;
+
+            scale += e.deltaY > 0 ? -zoomFactor : zoomFactor;
+            scale = Math.min(Math.max(minScale, scale), maxScale); // Limit zoom within minScale and maxScale
+
+            if (scale !== prevScale) {
+                // Adjust position to maintain mouse point
+                posX = mouseX - (mouseX - posX) * (scale / prevScale);
+                posY = mouseY - (mouseY - posY) * (scale / prevScale);
+                limitPan();
+            }
+
+            drawImage();
+        });
+    }
+</script>
+<body>
+<div id="loading-spinner" class="loading-spinner hidden">
+    <h2>Loading</h2>
+    <div class="spinner"></div>
+</div>
+<div class="flex">
+    <div style="flex: 3; height: 100vh;">
+        <div class="flex column" style="height: 100%;">
+            <div id="canvasContainer">
+                <canvas id="imageCanvas"></canvas>
+                <div id="popup">
+                    <button id="popupButton">Delete</button>
+                    <button id="increaseButton">Increase</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="panel" style="flex: 1; padding-top: 3rem;">
+        <div id="category-buttons" class="flex row flex-center"></div>
+        <div id="furniture-containers" class="flex column">
+            <div id="control-template" class="controls hidden">
+                <button class="control-button increase">+</button>
+                <button class="control-button delete">x</button>
+                <button class="control-button decrease">-</button>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

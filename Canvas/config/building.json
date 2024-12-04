@@ -1,0 +1,31 @@
+{
+  "name": "Building T",
+  "base_url": "http://localhost:9191",
+  "logo": "assets/logo.png",
+  "project": "Project X",
+  "houses": [
+    {
+      "id": "AAA",
+      "name": "A101",
+      "area": "60",
+      "floor": "3",
+      "floors": [
+        {
+          "id": "xxx",
+          "name": "Floor 1",
+          "image": "assets/floorplans/example-floor-1.jpg"
+        },
+        {
+          "id": "yyy",
+          "name": "Floor 2",
+          "image": "assets/floorplans/example-floor-2.jpg"
+        },
+        {
+          "id": "zzz",
+          "name": "Floor 3",
+          "image": "assets/floorplans/example-floor-3.jpg"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Floorplan tool</title>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js" ></script>
+    <script src="https://unpkg.com/jspdf@latest/dist/jspdf.umd.min.js"></script>
+</head>
+<style>
+    body {
+        margin: 0;
+        padding: 0;
+        font-family: 'Lucida Grande', Arial, sans-serif;
+    }
+    h2 {
+        border-top-right-radius: 24px;
+        padding: 12px;
+    }
+    .flex { display: flex; }
+    .row { flex-direction: row; }
+    .column { flex-direction: column; }
+    .flex-center {justify-content: center}
+    .tab-button {
+        width: 10rem;
+        display: inline-block;
+        background-color: #eee;
+        font-weight: bold;
+        margin-right: 5px;
+        border: 1px solid gainsboro;
+        color: gray;
+        padding: .5rem 1rem;
+        box-shadow: 0 .5rem 1rem 0 rgba(0, 0, 0, .05);
+        border-radius: .5rem;
+        cursor: pointer;
+    }
+    .layout-button {
+        background-color: #eee;
+        font-weight: bold;
+        margin-right: 5px;
+        border: 1px solid gainsboro;
+        color: gray;
+        padding: .5rem 1rem;
+        box-shadow: 0 .5rem 1rem 0 rgba(0, 0, 0, .05);
+        border-radius: .5rem;
+        cursor: pointer;
+    }
+    .layout-container {
+        justify-content: center;
+        margin: 2rem auto;
+    }
+    .tab-button:hover {
+        border: 1px solid black;
+    }
+
+    .active {
+        background-color: #fff;
+        border-bottom: 2px solid #333;
+    }
+    .hidden {
+        display: none !important;
+    }
+    .panel {
+        padding: 1rem;
+        background-color: #eee;
+        border: 1px solid #ccc;
+    }
+    .clickable:hover {
+        cursor: pointer;
+        transform: scale(1.1);
+    }
+    .controls {
+        opacity: 0;
+        transition: opacity 0.5s ease-out;
+        transition-delay: 0.5s;
+    }
+    .draggable:hover + .controls {
+        opacity: 1;
+        transition-delay: 0s;
+    }
+    .controls:hover, .controls:hover ~ .controls {
+        opacity: 1;
+        transition-delay: 0s;
+    }
+    .control-button {
+        background-color: #eee;
+        font-weight: bold;
+        border: 1px solid gainsboro;
+        color: gray;
+        padding: .5rem 1rem;
+        box-shadow: 0 .5rem 1rem 0 rgba(0, 0, 0, .1);
+        border-radius: 100%;
+        cursor: pointer;
+    }
+    /*.floorplan img {*/
+    /*    max-height: calc(100vh - 100px);*/
+    /*    object-fit: contain;*/
+    /*    width: auto;*/
+    /*}*/
+    .floorplan {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+    .rotate-0 { transform: rotate(0deg); }
+    .rotate-10 { transform: rotate(10deg); }
+    .rotate-20 { transform: rotate(20deg); }
+    .rotate-30 { transform: rotate(30deg); }
+    .rotate-40 { transform: rotate(40deg); }
+    .rotate-50 { transform: rotate(50deg); }
+    .rotate-60 { transform: rotate(60deg); }
+    .rotate-70 { transform: rotate(70deg); }
+    .rotate-80 { transform: rotate(80deg); }
+    .rotate-90 { transform: rotate(90deg); }
+    .rotate-100 { transform: rotate(100deg); }
+    .rotate-110 { transform: rotate(110deg); }
+    .rotate-120 { transform: rotate(120deg); }
+    .rotate-130 { transform: rotate(130deg); }
+    .rotate-140 { transform: rotate(140deg); }
+    .rotate-150 { transform: rotate(150deg); }
+    .rotate-160 { transform: rotate(160deg); }
+    .rotate-170 { transform: rotate(170deg); }
+    .rotate-180 { transform: rotate(180deg); }
+    .rotate-190 { transform: rotate(190deg); }
+    .rotate-200 { transform: rotate(200deg); }
+    .rotate-210 { transform: rotate(210deg); }
+    .rotate-220 { transform: rotate(220deg); }
+    .rotate-230 { transform: rotate(230deg); }
+    .rotate-240 { transform: rotate(240deg); }
+    .rotate-250 { transform: rotate(250deg); }
+    .rotate-260 { transform: rotate(260deg); }
+    .rotate-270 { transform: rotate(270deg); }
+    .rotate-280 { transform: rotate(280deg); }
+    .rotate-290 { transform: rotate(290deg); }
+    .rotate-300 { transform: rotate(300deg); }
+    .rotate-310 { transform: rotate(310deg); }
+    .rotate-320 { transform: rotate(320deg); }
+    .rotate-330 { transform: rotate(330deg); }
+    .rotate-340 { transform: rotate(340deg); }
+    .rotate-350 { transform: rotate(350deg); }
+    .rotate-360 { transform: rotate(360deg); }
+    .rotate-neg-360 { transform: rotate(-360deg); }
+    .rotate-neg-350 { transform: rotate(-350deg); }
+    .rotate-neg-340 { transform: rotate(-340deg); }
+    .rotate-neg-330 { transform: rotate(-330deg); }
+    .rotate-neg-320 { transform: rotate(-320deg); }
+    .rotate-neg-310 { transform: rotate(-310deg); }
+    .rotate-neg-300 { transform: rotate(-300deg); }
+    .rotate-neg-290 { transform: rotate(-290deg); }
+    .rotate-neg-280 { transform: rotate(-280deg); }
+    .rotate-neg-270 { transform: rotate(-270deg); }
+    .rotate-neg-260 { transform: rotate(-260deg); }
+    .rotate-neg-250 { transform: rotate(-250deg); }
+    .rotate-neg-240 { transform: rotate(-240deg); }
+    .rotate-neg-230 { transform: rotate(-230deg); }
+    .rotate-neg-220 { transform: rotate(-220deg); }
+    .rotate-neg-210 { transform: rotate(-210deg); }
+    .rotate-neg-200 { transform: rotate(-200deg); }
+    .rotate-neg-190 { transform: rotate(-190deg); }
+    .rotate-neg-180 { transform: rotate(-180deg); }
+    .rotate-neg-170 { transform: rotate(-170deg); }
+    .rotate-neg-160 { transform: rotate(-160deg); }
+    .rotate-neg-150 { transform: rotate(-150deg); }
+    .rotate-neg-140 { transform: rotate(-140deg); }
+    .rotate-neg-130 { transform: rotate(-130deg); }
+    .rotate-neg-120 { transform: rotate(-120deg); }
+    .rotate-neg-110 { transform: rotate(-110deg); }
+    .rotate-neg-100 { transform: rotate(-100deg); }
+    .rotate-neg-90 { transform: rotate(-90deg); }
+    .rotate-neg-80 { transform: rotate(-80deg); }
+    .rotate-neg-70 { transform: rotate(-70deg); }
+    .rotate-neg-60 { transform: rotate(-60deg); }
+    .rotate-neg-50 { transform: rotate(-50deg); }
+    .rotate-neg-40 { transform: rotate(-40deg); }
+    .rotate-neg-30 { transform: rotate(-30deg); }
+    .rotate-neg-20 { transform: rotate(-20deg); }
+    .rotate-neg-10 { transform: rotate(-10deg); }
+    .rotate-neg-0 { transform: rotate(0deg); }
+    .loading-spinner {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background-color: #f0f4f8;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+    }
+
+    .loading-spinner h2 {
+        color: #000;
+        margin-bottom: 1rem;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .spinner {
+        border: 4px solid rgba(0, 0, 0, 0.1);
+        width: 3rem;
+        height: 3rem;
+        border-radius: 50%;
+        border-top-color: #eee;
+        animation: spin 1s linear infinite;
+    }
+</style>
+<script>
+    window.onload = () => {
+        let currentFloor = 1;
+        let currentCategory = "tables";
+        let buildingLoaded = false;
+        let furnitureLoaded = false;
+        let draggingFurniture = false;
+        const floorPlans = document.getElementById('floor-plans');
+
+        function getFloorScale(floorNumber) {
+            return 1
+        }
+        function getFloorX() {
+            return document.getElementById(`floor-${currentFloor}`).getBoundingClientRect().left
+        }
+        function getFloorY() {
+            return document.getElementById(`floor-${currentFloor}`).getBoundingClientRect().top
+        }
+        function setFloorX(x) {
+            return document.getElementById(`floor-${currentFloor}`).left = x
+        }
+        function setFloorY(y) {
+            return document.getElementById(`floor-${currentFloor}`).top = y
+        }
+        function screenPos2FloorPos(mouseX, mouseY) {
+            const floorPlansWidth = getFloorPlansWidth()
+            const floorPlansHeight = getFloorPlansHeight()
+            const floorPlansCentreX = floorPlansWidth / 2
+            const floorPlansCentreY = floorPlansHeight / 2
+            const relativeX = (mouseX - floorPlansCentreX) - getFloorX()
+            const relativeY = (mouseY - floorPlansCentreY) - getFloorY()
+
+            return [relativeX, relativeY]
+        }
+        function getFloorWidth() {
+            return document.querySelector(`#floor-${currentFloor} img`).width
+        }
+        function getFloorHeight() {
+            return document.querySelector(`#floor-${currentFloor} img`).height
+        }
+        function getFloorPlansWidth() {
+            return floorPlans.getBoundingClientRect().width;
+
+        }
+        function getFloorPlansHeight() {
+            return floorPlans.getBoundingClientRect().height;
+        }
+
+        const [_, houseId] = window.location.hash.split("#");
+        const createFloorButton = (floorNumber, floorName) => {
+            const button = document.createElement('button');
+            button.id = `floor-button-${floorNumber}`;
+            button.innerText = floorNumber;
+            button.onclick = () => showFloor(floorNumber);
+            button.classList.add('tab-button');
+            button.classList.add('clickable');
+            button.innerText = floorName
+            floorNumber===currentFloor && button.classList.add('active');
+            return button;
+        }
+        const createCategoryButton = (categoryName) => {
+            const button = document.createElement('button');
+            button.id = `${categoryName}-tab`;
+            button.innerText = categoryName;
+            button.onclick = () => showCategory(categoryName);
+            button.classList.add('layout-button');
+            button.classList.add('clickable');
+            categoryName===currentCategory && button.classList.add('active');
+            return button;
+        }
+        const checkIfLoaded = () => {
+            if (buildingLoaded && furnitureLoaded) {
+                document.getElementById("loading-spinner").classList.add("hidden");
+            }
+        }
+        //  Load floors based on building id
+        fetch("/building.json").then(resp => resp.json()).then(building => {
+            const {floors} = building.houses.find(h => h.id === houseId) ?? building.houses[0];
+            floors.forEach((floor, index) => {
+                //  Add floor buttons
+                const floorNo = index+1;
+                const floorButton = createFloorButton(floorNo, floor.name);
+                document.getElementById('floor-buttons').appendChild(floorButton);
+                const parentDiv = document.createElement('div');
+
+
+                //  Add floor images
+                const div = document.createElement('div');
+                div.id = `floor-${floorNo}`;
+                index+1 !== currentFloor && div.classList.add('hidden');
+
+                const floorImage = document.createElement('img');
+                floorImage.src = `${building.base_url}/${floor.image}`;
+                floorImage.draggable = false;
+                div.appendChild(floorImage);
+                parentDiv.appendChild(div)
+                parentDiv.classList.add('floorplan');
+                document.getElementById('floor-plans').appendChild(parentDiv);
+
+            });
+        }).then(() => {
+            buildingLoaded = true;
+            checkIfLoaded()
+        })
+
+        document.getElementById('floor-plans').onmousemove = e => {
+            if (!draggingFurniture) {
+                const x = e.clientX - floorPlans.getBoundingClientRect().left;
+                const y = e.clientY - floorPlans.getBoundingClientRect().top;
+
+                // console.log(screenPos2FloorPos(x, y))
+
+            }
+        }
+        document.getElementById('floor-plans').onmousedown = e => {
+            console.log("down")
+        }
+        // Load furniture
+        fetch("/furniture.json").then(resp => resp.json()).then(furniture => {
+            furniture.forEach(f => {
+                const categoryName = f.name.toLowerCase();
+                const categoryButton = createCategoryButton(categoryName);
+                document.getElementById('category-buttons').appendChild(categoryButton);
+                const {items} = f;
+                const div = document.createElement('div');
+                div.classList.add('layout-container');
+                div.classList.add('column');
+                div.classList.add('flex');
+                currentCategory !== categoryName && div.classList.add('hidden');
+                div.id = `${categoryName}-container`;
+
+                items.forEach(item => {
+                    const button = document.createElement('button');
+                    button.classList.add('tab-button');
+                    button.onclick = () => showFurniture(item.name);
+                    const img = document.createElement('img');
+                    img.src = item.image;
+                    img.draggable = false;
+                    button.appendChild(img);
+                    div.appendChild(button);
+                });
+
+                document.getElementById('furniture-containers').appendChild(div)
+            });
+        }).then(() => {
+            furnitureLoaded = true;
+            checkIfLoaded();
+        });
+        function showFloor(floorNumber) {
+            if (floorNumber === currentFloor) {
+                return;
+            }
+
+            document.getElementById(`floor-${currentFloor}`).classList.add('hidden');
+            document.getElementById(`floor-button-${currentFloor}`).classList.remove('active');
+            currentFloor = floorNumber;
+            document.getElementById(`floor-${currentFloor}`).classList.remove('hidden');
+            document.getElementById(`floor-button-${currentFloor}`).classList.add('active');
+        }
+
+        function showFurniture(furniture) {
+            let angle = 0
+            const img = document.querySelector(`img[src="${furniture}.png"]`).cloneNode(true);
+            img.style.position = 'absolute';
+            img.style.top = document.querySelector('div.panel').height + 'px';
+            console.log(getFloorWidth()/2, img.getBoundingClientRect().width/2, getFloorWidth()/2 - img.getBoundingClientRect().width/2)
+            img.style.left = getFloorWidth()/2 - img.getBoundingClientRect().width/2 + 'px';
+            img.style.cursor = 'move';
+            img.classList.add('draggable');
+
+            const controls = document.querySelector('#control-template').cloneNode(true);
+            controls.classList.remove('hidden');
+            controls.style.position = 'absolute';
+            controls.style.top = '-100px';
+            controls.style.left = '-100px';
+            controls.id = "";
+            controls.childNodes[1].onclick = () => {
+                img.className = img.className.replace(/\brotate-\S+/g, '');
+                angle = (angle + 10) % 360;
+                img.classList.add(`rotate-${angle < 0 ? `neg-${-1*angle}` : angle}`);
+            };
+            controls.childNodes[3].onclick = () => {
+                img.remove();
+                controls.remove();
+            };
+            controls.childNodes[5].onclick = () => {
+                img.className = img.className.replace(/\brotate-\S+/g, '');
+                angle = (angle - 10) % 360;
+                img.classList.add(`rotate-${angle < 0 ? `neg-${-1*angle}` : angle}`);
+            };
+
+            img.addEventListener('mousedown', (e) => {
+                draggingFurniture = true;
+                const x = e.clientX - img.getBoundingClientRect().left;
+                const y = e.clientY - img.getBoundingClientRect().top;
+                const move = (e) => {
+                    img.style.top = `${y}px`;
+                    img.style.left = `${x}px`;
+                    controls.style.top = `${(e.clientY-y) - controls.offsetHeight/2 - img.offsetHeight/2}px`;
+                    controls.style.left = `${(e.clientX-x) - (controls.offsetWidth-img.offsetWidth)/2}px`;
+                };
+                document.addEventListener('mousemove', move);
+                document.addEventListener('mouseup', () => {
+                    draggingFurniture = false;
+                    document.removeEventListener('mousemove', move);
+                });
+            });
+
+            document.getElementById(`floor-${currentFloor}`).appendChild(img);
+            document.getElementById(`floor-${currentFloor}`).appendChild(controls);
+        }
+        function showCategory(categoryName) {
+            if (categoryName === currentCategory) {
+                return;
+            }
+
+            document.getElementById(`${currentCategory}-container`).classList.add('hidden');
+            document.getElementById(`${currentCategory}-tab`).classList.remove('active');
+
+            currentCategory = categoryName;
+
+            document.getElementById(`${currentCategory}-tab`).classList.add('active');
+            document.getElementById(`${currentCategory}-container`).classList.remove('hidden');
+
+
+        }
+    }
+
+
+    window.jsPDF = window.jspdf.jsPDF;
+    function generatePDF() {
+        const div = document.getElementById(`floor-${currentFloor}`);
+        html2canvas(div).then(canvas => {
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jsPDF('p', 'mm', 'a5');
+            const width = pdf.internal.pageSize.getWidth();
+            const height = pdf.internal.pageSize.getHeight();
+            pdf.addImage(imgData, 'PNG', 0, 0, width, height);
+            pdf.save(`floor-${currentFloor}.pdf`);
+        });
+        // downloadDivAsPDF(`floor-${currentFloor}`, `floor-${currentFloor}.pdf`)
+    }
+    // function downloadDivAsPDF(divId, fileName) {
+    //     const div = document.getElementById(divId);
+    //     const canvas = document.createElement('canvas');
+    //     canvas.width = div.clientWidth;
+    //     canvas.height = div.clientHeight;
+    //
+    //     const iframe = document.createElement('iframe');
+    //     iframe.width = div.clientWidth;
+    //     iframe.height = div.clientHeight;
+    //     iframe.style.position = 'absolute';
+    //     iframe.style.visibility = 'hidden';
+    //     iframe.srcdoc = div.innerHTML;
+    //     document.body.appendChild(iframe);
+    //
+    //     iframe.onload = function () {
+    //         const ctx = canvas.getContext('2d');
+    //         ctx.drawImage(iframe.contentWindow.document.body.firstChild, 0, 0);
+    //
+    //         // Generate a PDF using the data URL scheme
+    //         const pdfDataUrl = 'data:application/pdf;base64,' + btoa(canvas.toDataURL('image/jpeg', 1.0));
+    //
+    //         // Create a link element and trigger a download
+    //         const link = document.createElement('a');
+    //         link.href = pdfDataUrl;
+    //         link.download = fileName;
+    //         link.style.display = 'none';
+    //         document.body.appendChild(link);
+    //         link.click();
+    //
+    //         // Clean up temporary elements
+    //         document.body.removeChild(link);
+    //         document.body.removeChild(iframe);
+    //     };
+    // }
+
+    // Usage example:
+    // downloadDivAsPDF('your-div-id', 'your-pdf-file-name.pdf');
+
+
+</script>
+<body>
+<div id="loading-spinner" class="loading-spinner">
+    <h2>Loading</h2>
+    <div class="spinner"></div>
+</div>
+<div class="flex">
+    <div style="flex: 3; height: 100vh;">
+        <div class="flex column" style="height: 100%;">
+            <div id="floor-buttons" class="panel flex row flex-center" ></div>
+            <div id="floor-plans" class="flex flex-center" style="overflow: hidden; position: relative; height: 100%;"></div>
+        </div>
+    </div>
+    <div class="panel" style="flex: 1; padding-top: 3rem;">
+        <div id="category-buttons" class="flex row flex-center"></div>
+        <div id="furniture-containers" class="flex column">
+            <div id="control-template" class="controls hidden">
+                <button class="control-button increase">+</button>
+                <button class="control-button delete">x</button>
+                <button class="control-button decrease">-</button>
+            </div>
+        </div>
+        <div style="margin-top: auto" class="flex flex-center">
+            <button class="layout-button clickable" onclick="generatePDF()">Download PDF</button>
+        </div>
+    </div>
+</div>
+</body>
+</html>

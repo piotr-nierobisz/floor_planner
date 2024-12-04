@@ -1,0 +1,41 @@
+{
+	"building":"Building Name",
+	"url":"examplehousingsite.com/building-a/",
+	"houses":[
+		{
+			"id":"xxx",
+			"name":"A101",
+			"area":"60",
+			"floor":"3", // This is the floor the apartment is on within the building
+			"floors":[
+				{
+					"id":"xxx",
+					"name":"Floor 1",
+					"image":"example-floor-1.jpg"
+				},
+				{
+					"id":"xxx",
+					"name":"Floor 2",
+					"image":"example-floor-2.jpg"
+				},
+				{
+					"id":"xxx",
+					"name":"Floor 3",
+					"image":"example-floor-3.jpg"
+				}
+			]
+		},
+		{
+			"id":"xxx",
+			"name":"A102",
+			"area":"xxx",
+			"floors":[
+				{
+					"id":"xxx",
+					"name":"xxx",
+					"image":"/xxx/xxx.jpg/png"
+				}
+			]
+		}
+	]
+}

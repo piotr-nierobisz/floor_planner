@@ -1,0 +1,96 @@
+[
+  {
+    "name": "Beds",
+    "title": "This is a title about beds",
+    "description": "Under text",
+    "items": [
+      {
+        "name": "King Bed",
+        "image": "assets/furniture/beds/bed-king.png"
+      },
+      {
+        "name": "Queen Bed",
+        "image": "assets/furniture/beds/bed-queen.png"
+      },
+      {
+        "name": "Single Bed",
+        "image": "assets/furniture/beds/bed-single.png"
+      }
+    ]
+  },
+  {
+    "name": "Plants",
+    "title": "This is a title about plants",
+    "description": "Under text",
+    "items": [
+      {
+        "name": "Plant",
+        "image": "assets/furniture/plants/plant.png"
+      },
+      {
+        "name": "Planter",
+        "image": "assets/furniture/plants/planter.png"
+      }
+    ]
+  },
+  {
+    "name": "Sofas",
+    "title": "This is a title about sofas",
+    "description": "Under text",
+    "items": [
+      {
+        "name": "Chair",
+        "image": "assets/furniture/sofas/chair.png"
+      },
+      {
+        "name": "Sofa 3",
+        "image": "assets/furniture/sofas/sofa-3.png"
+      },
+      {
+        "name": "Sofa Set",
+        "image": "assets/furniture/sofas/sofa-set.png"
+      }
+    ]
+  },
+  {
+    "name": "Tables",
+    "title": "This is a title about tables",
+    "description": "Under text",
+    "items": [
+      {
+        "name": "Table 4 Seater",
+        "image": "assets/furniture/tables/table-4-seater.png"
+      },
+      {
+        "name": "Table 6 Seater",
+        "image": "assets/furniture/tables/table-6-seater.png"
+      }
+    ]
+  },
+  {
+    "name": "TVs",
+    "title": "This is a title about TVs",
+    "description": "Under text",
+    "items": [
+      {
+        "name": "TV Bench",
+        "image": "assets/furniture/tvs/tv-bench.png"
+      }
+    ]
+  },
+  {
+    "name": "Wardrobes",
+    "title": "This is a title about wardrobes",
+    "description": "Under text",
+    "items": [
+      {
+        "name": "Wardrobe",
+        "image": "assets/furniture/wardrobes/wardrobe-1m.png"
+      },
+      {
+        "name": "Half wardrobe",
+        "image": "assets/furniture/wardrobes/wardrobe-halfm.png"
+      }
+    ]
+  }
+]

@@ -1,0 +1,98 @@
+{
+	"furnitureCategories":[
+		{
+			"name":"Beds",
+			"title":"This is a title about beds",
+			"description":"Under text",
+			"items":[
+				{
+					"name":"Bed 160x210",
+					"image":"bed-queen.png"
+				},
+				{
+					"name":"Bed 180x210",
+					"image":"bed-king.png"
+				},
+				{
+					"name":"Bed 90x210",
+					"image":"bed-single.png"
+				}
+			]
+		},
+		{
+			"name":"Sofas and Chairs",
+			"title":"This is a title about sofas and chairs",
+			"description":"Under text",
+			"items":[
+				{
+					"name":"Chair 80x80",
+					"image":"chair.png"
+				},
+				{
+					"name":"Sofa 200x90",
+					"image":"sofa-3.png"
+				},
+				{
+					"name":"Corner Sofa 300x300",
+					"image":"sofa-set.png"
+				}
+			]
+		},
+		{
+			"name":"Plants",
+			"title":"This is a title about plants",
+			"description":"Under text",
+			"items":[
+				{
+					"name":"Planter",
+					"image":"planter.png"
+				},
+				{
+					"name":"Plant",
+					"image":"plant.png"
+				}
+			]
+		},
+		{
+			"name":"Tables",
+			"title":"This is a title about tables",
+			"description":"Under text",
+			"items":[
+				{
+					"name":"Table 200x80",
+					"image":"table-6-seater.png"
+				},
+				{
+					"name":"Table 150x80",
+					"image":"table-4-seater.png"
+				}
+			]
+		},
+		{
+			"name":"TVs",
+			"title":"This is a title about TVs",
+			"description":"Under text",
+			"items":[
+				{
+					"name":"TV Bench",
+					"image":"tv-bench.png"
+				}
+			]
+		},
+		{
+			"name":"Wardrobes",
+			"title":"This is a title about Wardrobes",
+			"description":"Under text",
+			"items":[
+				{
+					"name":"Wardrobe 100x60",
+					"image":"wardrobe-1m.png"
+				},
+				{
+					"name":"Wardrobe 50x60",
+					"image":"wardrobe-halfm.png"
+				}
+			]
+		}
+	]
+}
